@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>生成私钥</title>
+</head>
+
+<script type="text/javascript">
+    var detail_div = 1;
+    function add_div() {
+        var e = document.getElementById("attributes");
+        var div = document.createElement("div");
+        div.className = "form-group";
+        div.id = "attributes" + detail_div;
+        div.innerHTML = e.innerHTML;
+        document.getElementById("form").appendChild(div);
+        detail_div++;
+    }
+
+    function del_div() {
+        var id = "attributes" + (detail_div - 1).toString();
+        var e = document.getElementById(id);
+        document.getElementById("form").removeChild(e);
+        detail_div--;
+    }
+
+</script>
+<script src="../renderer/keygen.js"></script>
+<body>
+<form id="form" role="form" method="post" class="formBuilder">
+    <div class="form-inline">
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <button type="button"  id="add-btn" onclick="add_div()">+</button>&nbsp;&nbsp;&nbsp;
+        <button type="button"  id="del-btn" onclick="del_div()">-</button>
+    </div>
+    <div  id="attributes">
+        <div class="form-inline">
+            <label for="attribute" >属性值</label>
+            <input  id="attribute"/>
+        </div>
+    </div>
+</form>
+<br>
+<button onclick="keyGen()"> 确定</button>
+</body>
+</html>

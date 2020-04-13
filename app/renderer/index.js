@@ -340,11 +340,11 @@ function traverseFileTree(item, path, token) {
         $("#result-tbody").append('<tr><td title="' + fullName + '">' + fullName + '</td><td><div id="futher-search' + global.multiindex + '" class="further-search-btn"><div class="ui small active inverted loader"></div></div></td></tr>');
 
         var newCheckSub = new CheckSubtitle(fullName, filePath, store.get('lang'), global.multiindex);
-        
+
         newCheckSub.checkSubMulti(showErrorPageMulti, showSuccessPageMulti, showPartialSuccessPageMulti, token);
 
         global.multifilesnum++;
-      } 
+      }
 
     });
   } else if (item.isDirectory) {
@@ -393,7 +393,7 @@ function loadMultiSearchLoadingPage() {
 function validateVideoFileExtension(fName) {
   var extensionLists = ['m4v', 'avi', 'mpg', 'mp4', 'webm', 'mkv'];
 
-  // One validation function for all file types     
+  // One validation function for all file types
   return extensionLists.indexOf(fName.split('.').pop()) > -1;
 
 }
@@ -500,7 +500,7 @@ function showPartialSuccessPage(result, filePath, token) {
 }
 
 
-// Function to show success page after a success search 
+// Function to show success page after a success search
 function showQuerySuccessPage(result, token) {
 
   function runLoading(resultJSON, callback) {
@@ -648,21 +648,21 @@ function showDeepSearchFailurePage(result, filePath) {
   console.log("Failed to find subtitle using deep search");
 }
 
-// Function to show success page of multi scan 
+// Function to show success page of multi scan
 // (shows a checkmark icon for the specific video file in the table)
 function showSuccessPageMulti(filePath, index, token) {
   $("#futher-search" + index).html('<span class="lnr lnr-checkmark-circle"></span>');
   checkMultiCheckComplete(token);
 }
 
-// Function to show failure page of multi scan 
+// Function to show failure page of multi scan
 // (shows a cross icon for the specific video file in the table)
 function showErrorPageMulti(filePath, index, token) {
   $("#futher-search" + index).html('<span class="lnr lnr-cross-circle"></span>');
   checkMultiCheckComplete(token);
 }
 
-// Function to show partial success page of multi scan 
+// Function to show partial success page of multi scan
 // (shows a right arrow icon for the specific video file in the table to proceed to deep scan)
 function showPartialSuccessPageMulti(filePath, index, token) {
   $("#futher-search" + index).html('<div id="proceed-further-id' + index + '" class="proceed-further"><span class="lnr lnr-arrow-right"></span></div>');
@@ -783,7 +783,7 @@ $('body').on('click', 'div.download-btn', function () {
 
         file.on('finish', function () {
           $(currentItem).html('<span class="lnr lnr-checkmark-circle"></span>');
-          file.close(); // Close() is async, call cb after close completes   
+          file.close(); // Close() is async, call cb after close completes
         });
 
 
@@ -832,7 +832,7 @@ $('body').on('click', 'div.download-btn', function () {
     });
 
     file.on('error', function (err) { // Handle errors
-      fs.unlinkSync(fullPath); // Delete the file async 
+      fs.unlinkSync(fullPath); // Delete the file async
       $(currentItem).html('<span class="lnr lnr-cross-circle"></span>');
       return console.log(err.message);
     });
@@ -868,7 +868,7 @@ function languageCodeto3Letter(lang) {
   }
 }
 
-// Function to genereate a simple random token 
+// Function to genereate a simple random token
 // (token is used to determine which page user is viewing in gSubs)
 function tokenGenerator() {
   var text = "";
@@ -877,4 +877,45 @@ function tokenGenerator() {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
 
   return text;
+}
+
+const add = document.querySelector("#keygen-button")
+const ipc = require('electron').ipcRenderer
+add.onclick = ()=> {
+  ipc.send('createKeyGenWindow');
+}
+let files;
+function uploadFile() {
+  dialog.showOpenDialog({
+    properties: ['openFile', 'openDirectory', 'multiSelections']
+  },function (fileNames) {
+        files=fileNames;
+        dialog.showMessageBox({
+          message:fileNames.toString()
+        })
+  })
+}
+
+function encrypt() {
+  dialog.showMessageBox({
+    message:files.toString()
+  })
+  for(var i=0;i<files.length;i++){
+    var dirName=path.dirname(files[i]);
+    var extName=path.extname(files[i]);
+    var baseName=path.basename(files[i],extName);
+    var fileName=baseName+".ABE";
+    var targetFile=path.join(dirName,fileName)
+    var data=fs.readFileSync(files[i]);
+    var encryptData=data.toString("base64");
+    var encryptFile={
+      "extName":extName,
+      "content":encryptData
+    }
+    fs.writeFileSync(targetFile,JSON.stringify(encryptFile));
+    var d=fs.readFileSync(targetFile);
+    var x=JSON.parse(d);
+    fs.writeFileSync("/Users/wu/test.png",Buffer.from(x['content'],"base64"))
+    console.log(x['extName']);
+  }
 }

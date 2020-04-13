@@ -12,6 +12,8 @@ const {ipcMain} = require('electron');
 
 
 let mainWindow; // this will store the window object
+let keyGenWindow;
+let encryptWindow;
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -22,10 +24,10 @@ function createWindow() {
     title: "gSubs",
     width: 344,
     height: 540,
-    resizable: false,
-    frame: false,
+    resizable: true,
+    frame: true,
     transparent: true,
-    maximizable: false,
+    maximizable: true,
     fullscreenable: false,
     icon: path.join(__dirname, '/build/icon.png')
   });
@@ -50,12 +52,14 @@ function createWindow() {
 
 }
 
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 
 app.on('ready', function() {
   createWindow();
+  mainWindow.webContents.openDevTools()
   console.log('log message');
   autoUpdater.checkForUpdates();
 });
@@ -95,3 +99,18 @@ app.on('activate', function () {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+ipcMain.on('createKeyGenWindow',()=> {
+  keyGenWindow = new BrowserWindow({
+    title:"生成私钥",
+    width: 500,
+    height: 500,
+    frame:true,
+    parent: mainWindow, //win是主窗口
+  })
+  keyGenWindow.loadURL(path.join('file:',__dirname,'/app/view/keygen.html')); //new.html是新开窗口的渲染进程
+  keyGenWindow.on('closed',()=>{keyGenWindow = null})
+
+})
+
+
