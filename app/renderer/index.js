@@ -21,11 +21,15 @@ var fs = require('fs');
 var app = require('electron').remote.app;
 var os = require("os");
 var SubDb = require("subdb");
+var exec=require('child_process').exec;
+var request = require('request');
+let projectPath = path.resolve('./');
+var keysPath=path.join(projectPath,"app","keys","user.keys");
+var pyFile=path.join(projectPath,"app","py","abeFuctions.py")
 
 global.store = new Store();
 global.globalToken = "";
 global.multiindex = 0;
-
 var deepSearchToken = "";
 var subdb = new SubDb();
 
@@ -221,7 +225,7 @@ $(document).on({
 
       // Check if files are being dragged into drag and drop zone
       var found = false,
-        node = e.target;
+          node = e.target;
       do {
         if (node === dropZone[0]) {
           found = true;
@@ -293,7 +297,7 @@ $(document).on({
           singleScan.checkSubSingle(showErrorPage, showFailurePage, showSuccessPage, showPartialSuccessPage, globalToken);
 
         } else
-        // If not valid video file, then show error and bring back to home page
+            // If not valid video file, then show error and bring back to home page
         {
           var dropZone = $('.zone');
           dropZone.removeClass('hover');
@@ -879,43 +883,150 @@ function tokenGenerator() {
   return text;
 }
 
-const add = document.querySelector("#keygen-button")
+const keygenButton = document.querySelector("#keygen-button")
 const ipc = require('electron').ipcRenderer
-add.onclick = ()=> {
+keygenButton.onclick = ()=> {
   ipc.send('createKeyGenWindow');
 }
-let files;
+
+function createEncryptWindow(){
+  ipc.send('createEncryptWindow');
+
+}
 function uploadFile() {
   dialog.showOpenDialog({
     properties: ['openFile', 'openDirectory', 'multiSelections']
   },function (fileNames) {
-        files=fileNames;
-        dialog.showMessageBox({
-          message:fileNames.toString()
-        })
+    remote.getGlobal("shareObject").files=fileNames
+    dialog.showMessageBox({
+      message:fileNames.toString()
+    })
   })
 }
 
-function encrypt() {
-  dialog.showMessageBox({
-    message:files.toString()
+function register() {
+  console.log(keysPath)
+  fs.exists(keysPath, function (exist) {
+
+    if (exist) {
+      var ch=dialog.showMessageBox({
+            type: "question",
+            message: "身份证书已经存在，点击确认将获取新的身份证书",
+            buttons:["取消","确认"],
+            cancelId:1
+          }
+      )
+      console.log(ch)
+      if(ch==1){
+        getCAKeys();
+      }
+    }else {
+      getCAKeys();
+    }
   })
+}
+
+function getCAKeys() {
+  request('http://localhost:8090/CA/register', function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      b64Data=Buffer.from(body).toString("base64")
+      fs.writeFileSync(keysPath,b64Data,"utf8")
+      dialog.showMessageBox({
+        type:"info",
+        title:"结果",
+        message:"生成证书成功"
+      })
+    }else {
+      dialog.showErrorBox(
+          "错误",
+          "生成证书失败"
+      )
+    }
+  })
+}
+
+function decrypt() {
+  var files=remote.getGlobal("shareObject").files
+  var b64UserDataByte=fs.readFileSync(keysPath);
+  var b64UserDataStr=b64UserDataByte.toString();
+  var UserDataByte=Buffer.from(b64UserDataStr,"base64")
+  var UserDataObj=JSON.parse(UserDataByte.toString('utf8'));
+  var b64User=Buffer.from(JSON.stringify(UserDataObj['privateData']),"utf8").toString("base64")
+  var b64GPP=Buffer.from(UserDataObj['gpp'],"utf8").toString("base64")
+  var cmd="python3 "+pyFile+" --method=decrypt"+" "+b64GPP+" "+b64User
   for(var i=0;i<files.length;i++){
     var dirName=path.dirname(files[i]);
     var extName=path.extname(files[i]);
-    var baseName=path.basename(files[i],extName);
-    var fileName=baseName+".ABE";
-    var targetFile=path.join(dirName,fileName)
-    var data=fs.readFileSync(files[i]);
-    var encryptData=data.toString("base64");
-    var encryptFile={
-      "extName":extName,
-      "content":encryptData
+    if(extName!=".ABE"){
+      dialog.showErrorBox(
+          "文件选择错误",
+          "文件:"+files[i]+"\n"+"不是已加密文件"
+      )
+      continue
     }
-    fs.writeFileSync(targetFile,JSON.stringify(encryptFile));
-    var d=fs.readFileSync(targetFile);
-    var x=JSON.parse(d);
-    fs.writeFileSync("/Users/wu/test.png",Buffer.from(x['content'],"base64"))
-    console.log(x['extName']);
+    var baseName=path.basename(files[i],extName);
+    var targetFile=path.join(dirName,baseName)
+    var sourceFile=files[i]
+    cmd+=" "+sourceFile+" "+targetFile
+    exec(cmd,function(error,stdout,stderr){
+      if(error) {
+        dialog.showErrorBox(
+            "错误",
+            "解密失败:"+stderr
+        )
+      }
+      else {
+        dialog.showMessageBox({
+          type:"info",
+          message:"解密成功"
+        })
+      }
+    });
+
   }
 }
+function updateKey(){
+  var b64UserDataByte=fs.readFileSync(keysPath);
+  var b64UserDataStr=b64UserDataByte.toString("utf-8")
+  var UserDataByte=Buffer.from(b64UserDataStr,"base64")
+  var UserDataStr=UserDataByte.toString("utf8");
+  var UserDataObj=JSON.parse(UserDataStr);
+  request.post({
+    url:"http://localhost:8090/AA/isLatest",
+    formData:{'userId':UserDataObj['privateData']['id']}
+  }, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      if(body==true){
+        dialog.showMessageBox({
+          type:"info",
+          title:"更新",
+          message:"发现新版本的私钥，点击确认更新"
+        })
+        request({
+          url:'http://localhost:8090/AA/skUpdate',
+          method: "POST",
+          json: true,
+          headers: {
+            "content-type": "application/json",
+          },
+          body: UserDataObj
+        }, function(error, response, body) {
+          if (!error && response.statusCode == 200) {
+            b64Data=Buffer.from(JSON.stringify(body)).toString("base64")
+            fs.writeFileSync(keysPath,b64Data,"utf8")
+            dialog.showMessageBox({
+              type:"info",
+              title:"结果",
+              message:"更新私钥成功"
+            })
+          }else {
+            dialog.showErrorBox(
+                "错误",
+                "更新私钥失败"
+            )
+          }
+        });
+      }
+
+    }
+  })}

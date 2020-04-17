@@ -29,8 +29,11 @@
   "dependencies": {
     "electron-store": "^1.3.0",
     "electron-updater": "^2.21.1",
+    "fix-path": "^3.0.0",
     "jquery": "^3.3.1",
     "opensubtitles-api": "^4.0.0",
+    "request": "^2.88.2",
     "subdb": "0.0.3"
-  }
+  },
+  "__npminstall_done": false
 }

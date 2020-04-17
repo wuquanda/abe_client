@@ -27,7 +27,7 @@
         <div class="ui grid top-adjust">
           <div class="five wide column top text-left">
             <div style="text-align: center;margin-left: 20px">
-              <button id="register-button" class="ui icon button big register" data-tooltip="注册身份"  onclick="$(this).blur();">
+              <button id="register-button" class="ui icon button big register" data-tooltip="注册身份"  onclick="register()">
               </button>
             </div>
           </div>
@@ -106,21 +106,21 @@
 
       <div class="five wide column top text-right">
         <div style="text-align: center;margin-right: 20px">
-          <button id="encrypt-button" class="ui icon button big encrypt" data-tooltip="加密" onclick="encrypt()">
+          <button id="encrypt-button" class="ui icon button big encrypt" data-tooltip="加密" onclick="createEncryptWindow()">
           </button>
         </div>
       </div>
-
+      <button onclick="updateKey()">点击</button>
       <div class="six wide column">
       </div>
 
       <div class="five wide column top text-left">
         <div style="text-align: center;margin-left: 20px">
-          <button id="decrypt-button" class="ui icon button big decrypt" data-tooltip="解密"  onclick="$(this).blur();">
+          <button id="decrypt-button" class="ui icon button big decrypt" data-tooltip="解密"  onclick="decrypt()">
           </button>
         </div>
       </div>
-  </div>
+    </div>
 
   <!-- Renderer file -->
   <script src="../renderer/index.js"></script>
@@ -141,8 +141,11 @@
   <!-- To make subtitle language selection dropdown to work -->
   <script>
     $('.ui.dropdown').dropdown();
+    window.setInterval("updateKey()",2000)
   </script>
 
+
+  </div>
 </body>
 
 </html>

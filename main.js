@@ -9,11 +9,13 @@ const url = require('url');
 const autoUpdater = require("electron-updater").autoUpdater;
 const {ipcMain} = require('electron');
 
-
-
 let mainWindow; // this will store the window object
 let keyGenWindow;
 let encryptWindow;
+
+global.shareObject = {
+  files: []
+};
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -59,7 +61,7 @@ function createWindow() {
 
 app.on('ready', function() {
   createWindow();
-  mainWindow.webContents.openDevTools()
+  //mainWindow.webContents.openDevTools()
   console.log('log message');
   autoUpdater.checkForUpdates();
 });
@@ -113,4 +115,15 @@ ipcMain.on('createKeyGenWindow',()=> {
 
 })
 
+ipcMain.on('createEncryptWindow',()=> {
+  keyGenWindow = new BrowserWindow({
+    title:"加密",
+    width: 500,
+    height: 500,
+    frame:true,
+    parent: mainWindow, //win是主窗口
+  })
+  keyGenWindow.loadURL(path.join('file:',__dirname,'/app/view/encrypt.html')); //new.html是新开窗口的渲染进程
+  keyGenWindow.on('closed',()=>{keyGenWindow = null})
 
+})
