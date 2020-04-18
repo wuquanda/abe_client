@@ -985,7 +985,9 @@ function decrypt() {
 
   }
 }
+var x=0
 function updateKey(){
+  console.log(x)
   var b64UserDataByte=fs.readFileSync(keysPath);
   var b64UserDataStr=b64UserDataByte.toString("utf-8")
   var UserDataByte=Buffer.from(b64UserDataStr,"base64")
@@ -996,7 +998,7 @@ function updateKey(){
     formData:{'userId':UserDataObj['privateData']['id']}
   }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
-      if(body==true){
+      if(body=='true'){
         dialog.showMessageBox({
           type:"info",
           title:"更新",
@@ -1012,13 +1014,22 @@ function updateKey(){
           body: UserDataObj
         }, function(error, response, body) {
           if (!error && response.statusCode == 200) {
-            b64Data=Buffer.from(JSON.stringify(body)).toString("base64")
-            fs.writeFileSync(keysPath,b64Data,"utf8")
-            dialog.showMessageBox({
-              type:"info",
-              title:"结果",
-              message:"更新私钥成功"
-            })
+            if(body!=null){
+              b64Data=Buffer.from(JSON.stringify(body)).toString("base64")
+              fs.writeFileSync(keysPath,b64Data,"utf8")
+              dialog.showMessageBox({
+                type:"info",
+                title:"结果",
+                message:"更新私钥成功"
+              })
+            }else{
+              dialog.showMessageBox({
+                type:"info",
+                title:"结果",
+                message:"已经是最新版本私钥"
+              })
+            }
+
           }else {
             dialog.showErrorBox(
                 "错误",
